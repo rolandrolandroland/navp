@@ -1,0 +1,11 @@
+name: navp_votes_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11       # specify your Python version
+  - requests
+  - pandas
+  - pip
+  - pip:
+    - -r requirements.txt
+    -
