@@ -5,108 +5,144 @@ import sqlite3
 import pandas as pd
 
 
-def fetch_house_bill_votes(congress, bill_type, bill_number, api_key=None):
+import os
+import requests
+from xml.etree import ElementTree as ET
+from typing import List, Dict
+
+def fetch_bill_votes_all_chambers(
+    congress: int,
+    bill_type: str,
+    bill_number: int,
+    api_key: str | None = None
+) -> List[Dict]:
     """
-    Fetches the most recent roll-call vote for one House/Senate bill.
-    Returns a list of dicts: one dict per legislator’s vote.
+    Return every legislator’s vote on the *latest* House roll-call **and**
+    the *latest* Senate roll-call for a given bill.
+
+    Parameters
+    ----------
+    congress   : int
+        Congress number, e.g. 118.
+    bill_type  : str
+        "hr" (House bill) or "s" (Senate bill).  Lower-case is fine.
+    bill_number: int
+        The bill’s numeric identifier, e.g. 8034.
+    api_key    : str | None
+        Your Congress.gov key.  If None we look for $CONGRESS_API_KEY.
+
+    Returns
+    -------
+    votes : list[dict]
+        One dict per *individual* vote, combined across chambers, with:
+            member_id      : unique ID (e.g. "A000370")
+            name           : legislator’s name
+            state, party   : metadata
+            chamber        : "House" or "Senate"
+            bill_id        : e.g. "HR.8034"
+            roll_number    : int (to keep House & Senate votes distinct)
+            vote_position  : "Yea" / "Nay" / "Present" / …
     """
+    # ------------------------------------------------------------------
+    # 0) House-keeping
+    # ------------------------------------------------------------------
     key = api_key or os.getenv("CONGRESS_API_KEY")
     if not key:
-        raise RuntimeError("Set CONGRESS_API_KEY or pass api_key explicitly.")
+        raise RuntimeError("Set CONGRESS_API_KEY or pass api_key.")
 
-    # 1) Get the bill’s actions
+    bill_id = f"{bill_type.upper()}.{bill_number}"
+
+    # ------------------------------------------------------------------
+    # 1) Pull the *entire* actions list (paginate w/ limit+offset)
+    # ------------------------------------------------------------------
     base_url   = "https://api.congress.gov/v3"
     actions_ep = f"{base_url}/bill/{congress}/{bill_type}/{bill_number}/actions"
 
-    all_actions = []
-    limit = 250
-    offset = 0
-
+    all_actions, limit, offset = [], 250, 0
     while True:
         resp = requests.get(
             actions_ep,
-            params={
-                "format": "json",
-                "api_key": key,
-                "limit": limit,
-                "offset": offset,
-            }
+            params=dict(format="json", api_key=key, limit=limit, offset=offset)
         )
         resp.raise_for_status()
         payload = resp.json()
 
-        # Try both possible locations for the array
         page_actions = (
-                payload.get("data", {}).get("actions")
-                or payload.get("actions")
-                or []
+            payload.get("data", {}).get("actions")
+            or payload.get("actions")
+            or []
         )
-
-        # Debug: show what keys we have and how many we got
-        print("Payload keys:", list(payload.keys()))
-        print(f"  Fetched {len(page_actions)} actions at offset {offset}")
-
-        if not page_actions:
-            break
-
         all_actions.extend(page_actions)
 
         if len(page_actions) < limit:
-            # last page
-            break
+            break                       # no more pages
+        offset += limit                 # fetch next slice
 
-        offset += limit
+    if not all_actions:
+        raise RuntimeError(f"No actions found for {bill_id}.")
 
-    actions = all_actions
-    if not actions:
-        raise RuntimeError(f"No actions for {bill_type.upper()}.{bill_number} in {congress}.")
+    # ------------------------------------------------------------------
+    # 2) Separate House + Senate roll-call actions.
+    #    We DON’T look at actionCode anymore; instead we check the
+    #    recordedVotes[].chamber value.
+    # ------------------------------------------------------------------
+    house_rolls  = []
+    senate_rolls = []
+    for act in all_actions:
+        for rv in act.get("recordedVotes", []):
+            if rv.get("chamber") == "House":
+                house_rolls.append(act)
+            elif rv.get("chamber") == "Senate":
+                senate_rolls.append(act)
 
-    # Now filter safely
-    roll_calls = [
-        a for a in actions
-        if a.get("actionCode") in ("H37100", "H37300")
-    ]
-    if not roll_calls:
-        raise RuntimeError(f"No roll-call found for {bill_type.upper()}.{bill_number}.")
-    last_vote = roll_calls[0]
-    print(last_vote)
+    if not house_rolls and not senate_rolls:
+        raise RuntimeError(f"No roll-calls at all for {bill_id}.")
 
+    # Helper: pick the roll-call with the HIGHEST rollNumber (latest)
+    def pick_latest(rolls):
+        return max(
+            rolls,
+            key=lambda a: a["recordedVotes"][0]["rollNumber"]
+        )
 
-    # 3) Extract Clerk EVS XML URL
-    recorded = last_vote.get("recordedVotes", [])
-    if recorded and recorded[0].get("url"):
-        evs_url = recorded[0]["url"]
-    else:
-        evs_path = last_vote.get("link") or last_vote.get("relatedLink")
-        if not evs_path:
-            raise RuntimeError("No EVS URL on roll-call action.")
-        evs_url = f"https://clerk.house.gov{evs_path}"
+    latest_house = pick_latest(house_rolls)  if house_rolls  else None
+    latest_sen   = pick_latest(senate_rolls) if senate_rolls else None
 
-    # 4) Download & parse the XML
-    xml = requests.get(evs_url)
-    xml.raise_for_status()
-    root = ET.fromstring(xml.content)
+    # ------------------------------------------------------------------
+    # 3) For whichever chamber(s) we found, pull the EVS XML & parse votes
+    # ------------------------------------------------------------------
+    def parse_evs_xml(evs_url, chamber) -> List[Dict]:
+        xml = requests.get(evs_url)
+        xml.raise_for_status()
+        root = ET.fromstring(xml.content)
 
-    # 5) Build vote records
-    votes = []
-    for rv in root.findall(".//recorded-vote"):
-        leg = rv.find("legislator")
-        vote_elem = rv.find("vote")
-        if leg is None or vote_elem is None:
+        vote_rows = []
+        for rv in root.findall(".//recorded-vote"):
+            leg = rv.find("legislator")
+            vote_elem = rv.find("vote")
+            if leg is None or vote_elem is None:
+                continue
+            vote_rows.append({
+                "member_id":    leg.attrib.get("name-id"),
+                "name":         leg.text.strip(),
+                "state":        leg.attrib.get("state"),
+                "party":        leg.attrib.get("party"),
+                "chamber":      chamber,
+                "bill_id":      bill_id,
+                # pull rollNumber so we can tell House 217 vs Senate 114 apart
+                "roll_number":  int(evs_url.split("roll")[-1].split(".")[0]),
+                "vote_position": vote_elem.text.strip(),
+            })
+        return vote_rows
+
+    all_votes = []
+    for rc, chamber in [(latest_house, "House"), (latest_sen, "Senate")]:
+        if rc is None:
             continue
-        votes.append({
-            "congress":      congress,
-            "bill_type":     bill_type,
-            "bill_number":   bill_number,
-            "member_id":     leg.attrib.get("name-id"),
-            "name":          leg.text.strip(),
-            "state":         leg.attrib.get("state"),
-            "party":         leg.attrib.get("party"),
-            "role":          leg.attrib.get("role"),
-            "vote_position": vote_elem.text.strip()
-        })
-    return votes
+        evs_url = rc["recordedVotes"][0]["url"]
+        all_votes.extend(parse_evs_xml(evs_url, chamber))
 
+    return all_votes
 
 def fetch_and_store_batch(bills, db_path="votes.db", api_key=None):
     """
@@ -130,7 +166,7 @@ def fetch_and_store_batch(bills, db_path="votes.db", api_key=None):
     )""")
 
     for congress, bill_type, bill_number in bills:
-        votes = fetch_house_bill_votes(congress, bill_type, bill_number, api_key)
+        votes = fetch_bill_votes_all_chambers(congress, bill_type, bill_number, api_key)
         for v in votes:
             c.execute("""
             INSERT OR IGNORE INTO bill_votes (
@@ -158,10 +194,7 @@ def build_vote_matrix(bills, db_path="votes.db"):
     df = df.merge(bills_df, on=["congress","bill_type","bill_number"], how="inner")
     df["bill_id"] = df["bill_type"].str.upper() + "." + df["bill_number"]
 
-    vote_matrix = df.pivot_table(index="member_id",
-                           columns="bill_id",
-                           values="vote_position",
-                                 aggfunc="last")
+    vote_matrix = df.pivot(index="member_id", columns="bill_id", values="vote_position")
     rep_info = (
         df[["name", "state", "party", "member_id"]]
         .drop_duplicates()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from get_votes import fetch_and_store_batch, build_vote_matrix
+from get_votes_dev import fetch_and_store_batch, build_vote_matrix
 
 
 def main():

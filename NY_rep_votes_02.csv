@@ -1,0 +1,49 @@
+"
+member_id","name
+","state
+","party
+","total_score
+","rank
+","percent
+","HR.2670
+","HR.340
+","HR.5917
+","HR.5961
+","HR.6090
+","HR.6126
+","HR.7217
+","HR.8034
+","HR.8038
+","HR.8070
+","HR.8369
+","HR.8771
+","HR.8774
+"
+V000081,Velázquez,NY,D,10.0,10,2.3,Nay,Nay,Yea,Nay,Nay,Nay,Nay,Nay,Nay,No,Nay,Nay,Nay
+O000172,Ocasio-Cortez,NY,D,9.0,18,4.1,Nay,Nay,Yea,Not Voting,Nay,Nay,Nay,Nay,Nay,No,Nay,Nay,Nay
+B001223,Bowman,NY,D,8.0,24,5.4,Nay,Nay,Yea,Nay,Nay,Nay,Nay,Nay,Nay,Not Voting,Nay,Not Voting,Not Voting
+C001067,Clarke (NY),NY,D,6.0,41,9.3,Nay,Nay,Yea,Nay,Nay,Nay,Nay,Yea,Yea,No,Nay,Nay,Nay
+K000402,Kennedy,NY,D,3.0,77,17.5,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,No,Nay,Nay,Nay
+T000469,Tonko,NY,D,2.0,100,22.7,Nay,Yea,Yea,Nay,Yea,Nay,Nay,Yea,Yea,No,Nay,Nay,Nay
+M001137,Meeks,NY,D,2.0,100,22.7,Nay,Yea,Yea,Nay,Yea,Nay,Nay,Yea,Yea,No,Nay,Nay,Nay
+N000002,Nadler,NY,D,2.0,100,22.7,Nay,Yea,Yea,Nay,Nay,Nay,Nay,Yea,Yea,No,Nay,Not Voting,Not Voting
+H001038,Higgins (NY),NY,D,2.0,100,22.7,Nay,Yea,NaN,Nay,NaN,Nay,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+J000294,Jeffries,NY,D,0.0,152,34.5,Nay,Yea,Yea,Yea,Yea,Nay,Nay,Yea,Yea,No,Nay,Nay,Nay
+M001206,Morelle,NY,D,0.0,152,34.5,Nay,Yea,Yea,Yea,Yea,Nay,Nay,Yea,Yea,No,Nay,Nay,Nay
+R000579,Ryan,NY,D,0.0,152,34.5,Nay,Yea,Yea,Yea,Yea,Nay,Nay,Yea,Yea,No,Nay,Nay,Nay
+G000599,Goldman (NY),NY,D,0.0,152,34.5,Nay,Yea,Yea,Nay,Yea,Nay,Yea,Yea,Yea,No,Nay,Nay,Nay
+E000297,Espaillat,NY,D,-2.0,190,43.1,Nay,Yea,Yea,Yea,Yea,Nay,Yea,Yea,Yea,No,Nay,Nay,Nay
+M001188,Meng,NY,D,-2.0,190,43.1,Nay,Yea,Yea,Yea,Yea,Nay,Yea,Yea,Yea,No,Nay,Nay,Nay
+S001222,Santos,NY,R,-3.0,206,46.7,Yea,Yea,NaN,Present,NaN,Yea,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+S001201,Suozzi,NY,D,-3.0,206,46.7,NaN,NaN,Yea,NaN,Yea,NaN,NaN,Yea,Yea,No,Yea,Nay,Nay
+T000486,Torres (NY),NY,D,-4.0,217,49.2,Nay,Yea,Yea,Yea,Yea,Nay,Yea,Yea,Yea,No,Yea,Nay,Nay
+W000828,Williams (NY),NY,R,-9.0,244,55.3,Not Voting,Yea,Yea,Yea,Yea,Yea,Yea,Not Voting,Not Voting,Aye,Yea,Yea,Yea
+G000597,Garbarino,NY,R,-10.0,261,59.2,Yea,Not Voting,Yea,Yea,Yea,Not Voting,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+L000600,Langworthy,NY,R,-11.0,287,65.1,Yea,Yea,Yea,Yea,Not Voting,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+M001221,Molinaro,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+M000317,Malliotakis,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+D000632,D'Esposito,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+L000599,Lawler,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+S001196,Stefanik,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+L000598,LaLota,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
+T000478,Tenney,NY,R,-12.0,370,83.9,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Yea,Aye,Yea,Yea,Yea
